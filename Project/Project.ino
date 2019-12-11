@@ -179,17 +179,14 @@ void warningBlinking() {
 void moveToTheFront(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed);
   StartMotor(mpin10, mpin11, 1, speed);
-
   if (duration > 0) {
     delay(duration); // How long the motors are on
   }
 }
 
-// If duration <= 0, the robot moves continuously
 void moveToTheBack(int speed, int duration) {
   StartMotor(mpin00, mpin01, 0, speed);
   StartMotor(mpin10, mpin11, 0, speed);
-
   if (duration > 0) {
     delay(duration); // How long the motors are on
   }
@@ -198,13 +195,17 @@ void moveToTheBack(int speed, int duration) {
 void turnRight(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed);
   StartMotor(mpin10, mpin11, 1, speed / 3);
-  delay(duration);
+  if (duration > 0) {
+    delay(duration); // How long the motors are on
+  }
 }
 
 void turnLeft(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed / 3);
   StartMotor(mpin10, mpin11, 1, speed);
-  delay(duration);
+  if (duration > 0) {
+    delay(duration); // How long the motors are on
+  }
 }
 
 void loop() {

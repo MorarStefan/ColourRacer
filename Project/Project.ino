@@ -3,7 +3,7 @@
 #include <RemoteXY.h>
 #include <Servo.h>
 
-// RemoteXY connection settings 
+// RemoteXY connection settings
 #define REMOTEXY_SERIAL Serial
 #define REMOTEXY_SERIAL_SPEED 115200
 #define REMOTEXY_WIFI_SSID "RemoteXY"
@@ -30,25 +30,26 @@
 Servo srv;
 int redFrequency = 0, greenFrequency = 0, blueFrequency = 0;
 
-// RemoteXY configurate  
+// RemoteXY configurate
 #pragma pack(push, 1)
 uint8_t RemoteXY_CONF[] =
-  { 255,4,0,0,0,43,0,8,8,1,
-  1,0,27,53,12,12,13,31,94,0,
-  1,0,13,67,12,12,13,31,60,0,
-  1,0,41,67,12,12,13,31,62,0,
-  1,0,27,80,12,12,13,31,118,0 }; 
-  
-// this structure defines all the variables of your control interface 
+{ 255, 4, 0, 0, 0, 43, 0, 8, 8, 1,
+  1, 0, 27, 53, 12, 12, 13, 31, 94, 0,
+  1, 0, 13, 67, 12, 12, 13, 31, 60, 0,
+  1, 0, 41, 67, 12, 12, 13, 31, 62, 0,
+  1, 0, 27, 80, 12, 12, 13, 31, 118, 0
+};
+
+// this structure defines all the variables of your control interface
 struct {
   // input variable
-  uint8_t button_up; // =1 if button pressed, else =0 
-  uint8_t button_left; // =1 if button pressed, else =0 
-  uint8_t button_right; // =1 if button pressed, else =0 
-  uint8_t button_down; // =1 if button pressed, else =0 
+  uint8_t button_up; // =1 if button pressed, else =0
+  uint8_t button_left; // =1 if button pressed, else =0
+  uint8_t button_right; // =1 if button pressed, else =0
+  uint8_t button_down; // =1 if button pressed, else =0
 
   // other variable
-  uint8_t connect_flag;  // =1 if wire connected, else =0 
+  uint8_t connect_flag;  // =1 if wire connected, else =0
 
 } RemoteXY;
 #pragma pack(pop)
@@ -64,7 +65,7 @@ void setupMotors() {
   pinMode(mpin10, OUTPUT);
   pinMode(mpin11, OUTPUT);
   // LED pin
-  pinMode(13, OUTPUT);  
+  pinMode(13, OUTPUT);
 }
 
 void setupColorSensor() {
@@ -73,7 +74,7 @@ void setupColorSensor() {
   pinMode(cspin2, OUTPUT);
   pinMode(cspin3, OUTPUT);
   pinMode(cspinOut, INPUT);
-  
+
   // Setting frequency-scaling to 20%
   digitalWrite(cspin0, 1);
   digitalWrite(cspin1, 0);
@@ -81,10 +82,10 @@ void setupColorSensor() {
 }
 
 void setup() {
-  RemoteXY_Init (); 
+  RemoteXY_Init ();
   setupMotors();
   setupColorSensor();
-  warningBlinking(); 
+  warningBlinking();
 
   Serial.begin(9600);
 }
@@ -97,7 +98,7 @@ void readRGBfrequency() {
   Serial.print(redFrequency);
   Serial.print("  ");
   delay(100);
-  
+
   digitalWrite(cspin2, 1);
   digitalWrite(cspin3, 1);
   greenFrequency = pulseIn(cspinOut, 0);
@@ -121,12 +122,12 @@ void StartMotor(int m1, int m2, int forward, int speed) {
   if (speed == 0) { // stop
     digitalWrite(m1, 0);
     digitalWrite(m2, 0);
-  } 
+  }
   else {
     if (forward) {
       digitalWrite(m2, 0);
       analogWrite(m1, speed); // use PWM
-    } 
+    }
     else {
       digitalWrite(m1, 0);
       analogWrite(m2, speed);
@@ -175,57 +176,49 @@ void warningBlinking() {
   digitalWrite(13, 1);
 }
 
-// If duration <= 0, the robot moves continuously
 void moveToTheFront(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed);
   StartMotor(mpin10, mpin11, 1, speed);
-  if (duration > 0) {
-    delay(duration); // How long the motors are on
-  }
+  delay(duration);
 }
 
 void moveToTheBack(int speed, int duration) {
   StartMotor(mpin00, mpin01, 0, speed);
   StartMotor(mpin10, mpin11, 0, speed);
-  if (duration > 0) {
-    delay(duration); // How long the motors are on
-  }
+  delay(duration);
 }
 
 void turnRight(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed);
   StartMotor(mpin10, mpin11, 1, speed / 3);
-  if (duration > 0) {
-    delay(duration); // How long the motors are on
-  }
+  delay(duration);
+}
 }
 
 void turnLeft(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed / 3);
   StartMotor(mpin10, mpin11, 1, speed);
-  if (duration > 0) {
-    delay(duration); // How long the motors are on
-  }
+  delay(duration);
 }
 
 void loop() {
   readRGBfrequency();
-  
+
   RemoteXY_Handler();
 
-  if(RemoteXY.button_up == 1){
-    moveToTheFront(120,0);
-  } 
-  else if(RemoteXY.button_down == 1){
-    moveToTheBack(120,0);
+  if (RemoteXY.button_up == 1) {
+    moveToTheFront(120, 0);
   }
-  else if(RemoteXY.button_left == 1){
-    turnLeft(120,0);
+  else if (RemoteXY.button_down == 1) {
+    moveToTheBack(120, 0);
   }
-  else if(RemoteXY.button_right == 1){
-    turnRight(120,0);
+  else if (RemoteXY.button_left == 1) {
+    turnLeft(120, 0);
   }
-  else{
+  else if (RemoteXY.button_right == 1) {
+    turnRight(120, 0);
+  }
+  else {
     delayStopped(1);
   }
 }

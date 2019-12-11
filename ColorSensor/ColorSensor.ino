@@ -27,26 +27,35 @@ void setup() {
 }
 
 void readRGBfrequency() {
+  // Red 
   digitalWrite(cspin2, 0);
   digitalWrite(cspin3, 0);
   redFrequency = pulseIn(cspinOut, 0);
-  Serial.print("R= ");
+  // Remaping the value to the RGB Model
+  redFrequency = map(redFrequency, 25, 70, 255, 0);
+  Serial.print("R: ");
   Serial.print(redFrequency);
   Serial.print("  ");
   delay(100);
-  
+
+  // Green
   digitalWrite(cspin2, 1);
   digitalWrite(cspin3, 1);
   greenFrequency = pulseIn(cspinOut, 0);
-  Serial.print("G= ");
+  // Remaping the value to the RGB Model
+  greenFrequency = map(greenFrequency, 30, 90, 255, 0);
+  Serial.print("G: ");
   Serial.print(greenFrequency);
   Serial.print("  ");
   delay(100);
 
+  // Blue
   digitalWrite(cspin2, 0);
   digitalWrite(cspin3, 1);
   blueFrequency = pulseIn(cspinOut, 0);
-  Serial.print("B= ");
+  // Remaping the value to the RGB Model
+  blueFrequency = map(blueFrequency, 25, 70, 255, 0);
+  Serial.print("B: ");
   Serial.print(blueFrequency);
   Serial.println("  ");
   delay(100);

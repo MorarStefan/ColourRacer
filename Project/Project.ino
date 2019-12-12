@@ -29,6 +29,8 @@
 
 Servo srv;
 int redFrequency = 0, greenFrequency = 0, blueFrequency = 0;
+boolean start = false, speedUp = false, speedDown = false, controllerChanged = false;
+int currentSpeed = 0, defaultSpeed = 60, slowSpeed = 10, fastSpeed = 120;
 
 // RemoteXY configurate
 #pragma pack(push, 1)
@@ -78,7 +80,6 @@ void setupColorSensor() {
   // Setting frequency-scaling to 20%
   digitalWrite(cspin0, 1);
   digitalWrite(cspin1, 0);
-
 }
 
 void setup() {
@@ -86,33 +87,32 @@ void setup() {
   setupMotors();
   setupColorSensor();
   warningBlinking();
-
-  Serial.begin(9600);
+  currentSpeed = defaultSpeed;
 }
 
 void readRGBfrequency() {
+  // Red
   digitalWrite(cspin2, 0);
   digitalWrite(cspin3, 0);
   redFrequency = pulseIn(cspinOut, 0);
-  Serial.print("R= ");
-  Serial.print(redFrequency);
-  Serial.print("  ");
+  // Remaping the value to the RGB Model
+  redFrequency = map(redFrequency, 25, 70, 255, 0);
   delay(100);
 
+  // Green
   digitalWrite(cspin2, 1);
   digitalWrite(cspin3, 1);
   greenFrequency = pulseIn(cspinOut, 0);
-  Serial.print("G= ");
-  Serial.print(greenFrequency);
-  Serial.print("  ");
+  // Remaping the value to the RGB Model
+  greenFrequency = map(greenFrequency, 30, 90, 255, 0);
   delay(100);
 
+  // Blue
   digitalWrite(cspin2, 0);
   digitalWrite(cspin3, 1);
   blueFrequency = pulseIn(cspinOut, 0);
-  Serial.print("B= ");
-  Serial.print(blueFrequency);
-  Serial.println("  ");
+  // Remaping the value to the RGB Model
+  blueFrequency = map(blueFrequency, 25, 70, 255, 0);
   delay(100);
 }
 
@@ -193,7 +193,6 @@ void turnRight(int speed, int duration) {
   StartMotor(mpin10, mpin11, 1, speed / 3);
   delay(duration);
 }
-}
 
 void turnLeft(int speed, int duration) {
   StartMotor(mpin00, mpin01, 1, speed / 3);
@@ -201,22 +200,115 @@ void turnLeft(int speed, int duration) {
   delay(duration);
 }
 
-void loop() {
+// The function returns: 0 (white), 1 (black), 2 (red), 3 (green), 4 (blue), 5 (yellow)
+int detectColor() {
   readRGBfrequency();
 
-  RemoteXY_Handler();
+  if (redFrequency > 200 && greenFrequency > 200 && blueFrequency > 200) { // white
+    return 0;
+  }
+  else if (redFrequency < 30 && greenFrequency < 30 && blueFrequency < 30) { // black
+    return 1;
+  }
+  else if (redFrequency > 100 && greenFrequency < 50 && blueFrequency < 50) { // red
+    return 2;
+  }
+  else if (greenFrequency > redFrequency && greenFrequency > blueFrequency) { // green
+    return 3;
+  }
+  else if (blueFrequency > redFrequency && blueFrequency > greenFrequency) { // blue
+    return 4;
+  }
+  else if (redFrequency > 150 && greenFrequency > 150 && blueFrequency < 100) { // yellow
+    return 5;
+  }
+  else {
+    return -1; // floor
+  }
+}
 
-  if (RemoteXY.button_up == 1) {
-    moveToTheFront(120, 0);
+void changeRobotState() {
+  int color = detectColor();
+  if (color == 0) {
+     if(start == false) { // (only if the state changes)
+      // send message to the phone: WHITE
+    }
+    start = true, speedUp = false, speedDown = false, controllerChanged = false; // reset everything
   }
-  else if (RemoteXY.button_down == 1) {
-    moveToTheBack(120, 0);
+  else if (color == 1 || color == 2) {
+     if(start == true) { // (only if the state changes)
+      if(color == 1) {
+        // send message to the phone: BLACK
+      }
+      else {
+        // send message to the phone: RED
+      }
+    }
+    start = false;
   }
-  else if (RemoteXY.button_left == 1) {
-    turnLeft(120, 0);
+  else if (color == 3) {
+    if(speedUp == false) { // (only if the state changes)
+      // send message to the phone: GREEN
+    }
+    speedUp = true; speedDown = false; controllerChanged = false;
   }
-  else if (RemoteXY.button_right == 1) {
-    turnRight(120, 0);
+  else if (color == 4) {
+     if(speedDown == false) { // (only if the state changes)
+      // send message to the phone: BLUE
+    }
+    speedUp = false; speedDown = true; controllerChanged = false;
+  }
+  else if (color == 5) {
+     if(controllerChanged == false) { // (only if the state changes)
+      // send message to the phone: YELLOW
+    }
+    speedUp = false; speedDown = false; controllerChanged = true;
+  }
+}
+
+void loop() {
+  RemoteXY_Handler();
+  changeRobotState();
+
+  if (start == true) {
+
+    // Speed
+    if (speedUp == true) {
+      currentSpeed = fastSpeed;
+    }
+    else if (speedDown == true) {
+      currentSpeed = slowSpeed;
+    }
+    else {
+      currentSpeed = defaultSpeed;
+    }
+
+    // Controller
+    if (RemoteXY.button_up == 1) {
+      moveToTheFront(currentSpeed, 0);
+    }
+    else if (RemoteXY.button_down == 1) {
+      moveToTheBack(currentSpeed, 0);
+    }
+    else if (RemoteXY.button_left == 1) {
+      if (controllerChanged == false) {
+        turnLeft(currentSpeed, 0);
+      }
+      else {
+        turnRight(currentSpeed, 0);
+      }
+    }
+    else if (RemoteXY.button_right == 1) {
+      if (controllerChanged == false) {
+        turnRight(currentSpeed, 0);
+      }
+      else {
+        turnLeft(currentSpeed, 0);
+      }
+    }
+    else {
+      delayStopped(1);
+    }
   }
   else {
     delayStopped(1);
